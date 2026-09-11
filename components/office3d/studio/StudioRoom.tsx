@@ -9,6 +9,7 @@ import { Windows } from "@/components/office3d/studio/Windows";
 import { CityView } from "@/components/office3d/studio/CityView";
 import { CeilingLights } from "@/components/office3d/studio/CeilingLights";
 import { BrandLogo } from "@/components/office3d/studio/BrandLogo";
+import { WallGraphic } from "@/components/office3d/studio/WallGraphic";
 
 /**
  * The architectural shell, assembled.
@@ -40,6 +41,7 @@ function StudioRoomImpl({ plan, deskCount }: StudioRoomProps) {
         deskCount={deskCount}
       />
       <BrandLogo plan={plan} />
+      <WallGraphic plan={plan} />
     </group>
   );
 }
