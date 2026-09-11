@@ -24,8 +24,8 @@ export interface Office3DProps {
   onSelect(id: ProjectId): void;
 }
 
-/** Two full bench runs are always dressed, however few projects are open. */
-const MIN_DESKS = SEATS_PER_ROW * 2;
+/** Three full bench runs are always dressed, however few projects are open. */
+const MIN_DESKS = SEATS_PER_ROW * 3;
 
 /**
  * The office as a navigable 3D room.

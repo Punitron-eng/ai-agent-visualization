@@ -19,8 +19,8 @@ export interface OfficeSceneProps {
 }
 
 /** Never fewer than one full row of desks, so the pods never look half-built. */
-/** Two full bench runs are always dressed, however few projects are open. */
-const MIN_DESKS = SEATS_PER_ROW * 2;
+/** Three full bench runs are always dressed, however few projects are open. */
+const MIN_DESKS = SEATS_PER_ROW * 3;
 
 /**
  * The office. Draw order is back-to-front (painter's algorithm) because SVG has
