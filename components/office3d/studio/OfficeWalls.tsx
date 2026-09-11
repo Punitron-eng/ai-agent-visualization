@@ -27,7 +27,14 @@ function OfficeWallsImpl({ plan }: OfficeWallsProps) {
   return (
     <group>
       {/* ── Back wall (z = 0), split around the ribbon window ─────────── */}
-      <Wall x={plan.width / 2} z={-t / 2} w={plan.width + t * 2} h={sill} d={t} y={sill / 2} />
+      <Wall
+        x={plan.width / 2}
+        z={-t / 2}
+        w={plan.width + t * 2}
+        h={sill}
+        d={t}
+        y={sill / 2}
+      />
       <Wall
         x={plan.width / 2}
         z={-t / 2}
@@ -38,7 +45,14 @@ function OfficeWallsImpl({ plan }: OfficeWallsProps) {
       />
       {/* Solid returns at each end of the ribbon, so the glazing reads as a
           band set into the wall rather than a hole cut to the corners. */}
-      <Wall x={1.35} z={-t / 2} w={2.7} h={head - sill} d={t} y={(sill + head) / 2} />
+      <Wall
+        x={1.35}
+        z={-t / 2}
+        w={2.7}
+        h={head - sill}
+        d={t}
+        y={(sill + head) / 2}
+      />
       <Wall
         x={plan.width - 1.9}
         z={-t / 2}
@@ -49,17 +63,31 @@ function OfficeWallsImpl({ plan }: OfficeWallsProps) {
       />
 
       {/* ── Left wall (x = 0): solid, the branding wall ────────────────── */}
-      <Wall x={-t / 2} z={plan.depth / 2} w={t} h={h} d={plan.depth + t} y={h / 2} />
+      <Wall
+        x={-t / 2}
+        z={plan.depth / 2}
+        w={t}
+        h={h}
+        d={plan.depth + t}
+        y={h / 2}
+      />
       {/* A wood-panelled section behind reception, as in the reference. */}
       <mesh
         geometry={OGEO.unitBox}
-        material={OMAT.wood}
+        material={OMAT.woodDark}
         position={[0.02, h / 2 - 0.2, plan.depth - 3.2]}
         scale={[0.06, h - 0.4, 4.2]}
       />
 
       {/* ── Right wall (x = width): frame only; Windows fills the rest ── */}
-      <Wall x={plan.width + t / 2} z={plan.depth / 2} w={t} h={0.35} d={plan.depth + t} y={0.175} />
+      <Wall
+        x={plan.width + t / 2}
+        z={plan.depth / 2}
+        w={t}
+        h={0.35}
+        d={plan.depth + t}
+        y={0.175}
+      />
       <Wall
         x={plan.width + t / 2}
         z={plan.depth / 2}

@@ -108,8 +108,15 @@ fill two clusters instead of scattering twelve desks over the floor.
 **The social wing runs across the back**: two glass meeting rooms and a recreation room, all in the
 same architectural language — full-height glazing, slim dark frames, a glass door, a ceiling
 fixture. Meeting 01 and Meeting 02 are one `<MeetingRoom />` rendered twice from a configuration
-array (seat count, whiteboard text, which way the door swings); their boards read
-*IDEAS → PRODUCTS → IMPACT* and *PLAN → BUILD → SHIP*.
+array (which table it is furnished with, seat count, whiteboard text, which way the door swings);
+their boards read *IDEAS → PRODUCTS → IMPACT* and *PLAN → BUILD → SHIP*.
+
+**Meeting 02 is the collaboration room**, and it is about human + AI: a `<CollaborationTable />`,
+four `<OfficeChair />` — two to a side, none on the ends — and one `<MacBookCodingStation />`, a
+laptop a size up from the ones on the benches, turned toward the camera with Claude Code running on
+it. The display is a live canvas: code lands line by line, the terminal scrolls through *Building…*,
+*Running tests…*, *Changes detected…*, the caret blinks and the agent's progress bar fills. Seven
+redraws a second, not sixty — enough to read as a working machine, cheap enough to be free.
 
 **The chill room has a carrom board**, and four free agents playing it. They are not projects and
 never claim to be — they are the crowd that makes the room feel occupied. Two take shots, two watch;

@@ -134,6 +134,18 @@ export const OGEO = {
   bookshelf: box(0.95, 1.15, 0.3),
   rug: cyl(1, 1, 0.012, 28),
 
+  // Collaboration room: rectangular table and the coding station on it
+  collabTop: box(2.1, 0.05, 1.02),
+  collabBand: box(2.02, 0.05, 0.94),
+  collabLeg: box(0.05, 0.71, 0.05),
+  collabRail: box(1.72, 0.04, 0.05),
+  macBase: box(0.56, 0.016, 0.38),
+  macLid: box(0.56, 0.355, 0.011),
+  macDisplay: new THREE.PlaneGeometry(0.525, 0.325),
+  macKeys: box(0.44, 0.005, 0.155),
+  macPad: box(0.15, 0.004, 0.1),
+  macFoot: box(0.5, 0.006, 0.3),
+
   // Carrom
   carromBed: box(0.78, 0.03, 0.78),
   carromFrame: box(0.96, 0.11, 0.09),
@@ -219,6 +231,9 @@ export const OMAT = {
   board: std("#f8f7f4", { roughness: 0.4 }),
   beige: std("#ded3c2", { roughness: 0.95 }),
   rug: std("#cfc6b8", { roughness: 1 }),
+  /** Anodised aluminium: the MacBook body in the collaboration room. */
+  aluminium: std("#c3c8cc", { roughness: 0.28, metalness: 0.82 }),
+  keycap: std("#17191c", { roughness: 0.85 }),
   /** Slim dark framing, shared by every glass partition in the social wing. */
   frame: std("#2a2e31", { roughness: 0.45, metalness: 0.55 }),
   warmGlow: basic("#ffd9a8"),

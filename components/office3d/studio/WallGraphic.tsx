@@ -17,9 +17,21 @@ import { SHELL } from "@/config/officeLayout";
 
 /** What the wall says, top line down. */
 const LINES = [
-  { text: "BETTER SHIPPING", size: 86, weight: 700, color: "#fff6e8", gap: 108 },
-  { text: "TOGETHER", size: 86, weight: 700, color: "#fff6e8", gap: 132 },
-  { text: "BUILD  ·  SHIP  ·  GROW", size: 46, weight: 500, color: "#f0d7b4", gap: 0 },
+  {
+    text: "BETTER SHIPPING",
+    size: 86,
+    weight: 700,
+    color: "#2121212",
+    gap: 108,
+  },
+  { text: "TOGETHER", size: 86, weight: 700, color: "#2121212", gap: 132 },
+  {
+    text: "BUILD  ·  SHIP  ·  GROW",
+    size: 46,
+    weight: 500,
+    color: "#2121212",
+    gap: 0,
+  },
 ] as const;
 
 const CANVAS_W = 1024;
@@ -41,7 +53,9 @@ function manifestoMaterial(): THREE.MeshBasicMaterial {
 
     // Centre the whole block on the panel: the gaps carry the baselines, and
     // the last line contributes its own height rather than a gap.
-    const block = LINES.reduce((total, line) => total + line.gap, 0) + LINES[LINES.length - 1].size;
+    const block =
+      LINES.reduce((total, line) => total + line.gap, 0) +
+      LINES[LINES.length - 1].size;
     let y = (CANVAS_H - block) / 2 + LINES[0].size * 0.5;
 
     for (const line of LINES) {

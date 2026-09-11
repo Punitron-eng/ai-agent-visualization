@@ -37,7 +37,11 @@ function meetingRooms(plan: OfficePlan): MeetingRoomConfig[] {
       zone: plan.zones.meeting,
       hoverLabel: "COLLABORATION",
       boardText: "PLAN → BUILD → SHIP",
-      seats: 6,
+      // The collaboration room: one long table, four chairs, and a laptop
+      // with Claude Code running on it.
+      layout: "collaboration",
+      subLabel: "HUMAN × AI",
+      seats: 4,
       doorAt: 0.32,
       // The shared partition with Meeting 01 is drawn once, by that room.
       wallLeft: false,
@@ -57,6 +61,7 @@ function SocialWingImpl({ plan, animate, onFocus }: SocialWingProps) {
           key={room.id}
           {...room}
           hovered={hovered === room.id}
+          animate={animate}
           onHover={(is) => setHovered(is ? room.id : null)}
         />
       ))}
