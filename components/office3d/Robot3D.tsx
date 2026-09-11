@@ -1,21 +1,28 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { AgentState } from "@/lib/agent/agentTypes";
+import type { Posture } from "@/lib/agent/stations";
 import { GEO, MAT, stateEmissive, visorMaterial } from "@/components/office3d/resources";
 
 export interface Robot3DProps {
   position: [number, number, number];
   state: AgentState;
-  /** Standing robots get legs; seated ones are cropped by the desk. */
-  pose?: "seated" | "standing";
+  /** How the body is arranged: on its feet, on a chair, or sunk into a beanbag. */
+  pose?: Posture;
   /** Y-rotation in radians. */
   facing?: number;
   scale?: number;
   /** Off-screen, hidden-tab or idle robots stop animating entirely. */
   animate?: boolean;
+  /**
+   * Draw the contact disc. Off for agents that are moved by a parent group,
+   * which owns the shadow so it stays on the floor while the body rises into
+   * a chair.
+   */
+  contactShadow?: boolean;
   /** Deterministic offset so a room full of robots does not move in lockstep. */
   seed?: number;
   /**
@@ -25,14 +32,34 @@ export interface Robot3DProps {
   walkPhase?: { current: number };
 }
 
+interface Rest {
+  hip: number;
+  torso: number;
+  thigh: number;
+  shin: number;
+  lean: number;
+}
+
 /**
- * The office worker, same family as the 2D rig: squashed sphere head, glowing
- * visor, capsule torso and limbs.
+ * Rest pose per posture, in local units above the group origin.
  *
- * All geometry and all materials are shared module-level singletons, so a
- * robot costs a handful of draw calls and zero new GPU resources. Animation is
- * done by mutating transforms in `useFrame` rather than through React state —
- * nothing here re-renders while it moves.
+ * The origin is whatever the agent is standing or sitting on, so a chair seat
+ * at 0.42 and a beanbag at 0.2 both put feet on the floor without the caller
+ * doing any arithmetic.
+ */
+const POSE: Record<Posture, Rest> = {
+  standing: { hip: 0.6, torso: 0.72, thigh: 0, shin: 0, lean: 0 },
+  seated: { hip: 0.06, torso: 0.42, thigh: -1.35, shin: 1.45, lean: 0.04 },
+  lounging: { hip: 0.03, torso: 0.36, thigh: -1.12, shin: 0.72, lean: -0.26 },
+};
+
+/**
+ * The office worker: squashed-sphere head with a glowing visor, a panelled
+ * torso, and jointed arms and legs.
+ *
+ * Everything is built from shared module-level geometry and materials, so one
+ * more agent on the floor costs draw calls and nothing else. Animation mutates
+ * transforms in `useFrame`; nothing here re-renders while it moves.
  */
 function Robot3DImpl({
   position,
@@ -41,21 +68,26 @@ function Robot3DImpl({
   facing = 0,
   scale = 1,
   animate = true,
+  contactShadow = true,
   seed = 0,
   walkPhase,
 }: Robot3DProps) {
   const root = useRef<THREE.Group>(null);
+  const body = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
   const armL = useRef<THREE.Group>(null);
   const armR = useRef<THREE.Group>(null);
   const visor = useRef<THREE.Mesh>(null);
   const legL = useRef<THREE.Group>(null);
   const legR = useRef<THREE.Group>(null);
+  const kneeL = useRef<THREE.Group>(null);
+  const kneeR = useRef<THREE.Group>(null);
 
   const emissive = visorMaterial(state);
-  // The antenna is a small tell, not the focal point; the visor carries the
-  // expression, so it is the brighter of the two.
+  // The antenna and chest light are small tells, not the focal point; the visor
+  // carries the expression, so it is the brightest of the three.
   const tell = stateEmissive(state, state === "idle" ? 0.25 : 0.7);
+  const rest = POSE[pose];
 
   useFrame((frame) => {
     if (!animate) return;
@@ -69,21 +101,27 @@ function Robot3DImpl({
     // Breathing, common to every state.
     group.position.y = position[1] + Math.sin(t * 1.5) * 0.012;
 
-    // Walking overrides the idle pose: legs swing, arms counter-swing, and the
-    // body bobs on each step.
+    // Walking overrides the rest pose: thighs swing from the hip, knees bend on
+    // the back stroke, arms counter-swing, and the body bobs on each step.
     const phase = walkPhase?.current ?? 0;
     const walking = phase > 0;
     if (walking) {
       const swing = Math.sin(phase);
-      if (legL.current) legL.current.rotation.x = swing * 0.55;
-      if (legR.current) legR.current.rotation.x = -swing * 0.55;
-      if (armL.current) armL.current.rotation.x = -swing * 0.4;
-      if (armR.current) armR.current.rotation.x = swing * 0.4;
+      if (legL.current) legL.current.rotation.x = swing * 0.62;
+      if (legR.current) legR.current.rotation.x = -swing * 0.62;
+      if (kneeL.current) kneeL.current.rotation.x = Math.max(0, -swing) * 0.7;
+      if (kneeR.current) kneeR.current.rotation.x = Math.max(0, swing) * 0.7;
+      if (armL.current) armL.current.rotation.x = -swing * 0.45;
+      if (armR.current) armR.current.rotation.x = swing * 0.45;
       if (head.current) head.current.rotation.y = Math.sin(phase * 0.35) * 0.16;
+      if (body.current) body.current.rotation.z = Math.sin(phase) * 0.03;
       group.position.y += Math.abs(Math.sin(phase)) * 0.035;
     } else {
-      if (legL.current) legL.current.rotation.x = 0;
-      if (legR.current) legR.current.rotation.x = 0;
+      if (legL.current) legL.current.rotation.x = rest.thigh;
+      if (legR.current) legR.current.rotation.x = rest.thigh;
+      if (kneeL.current) kneeL.current.rotation.x = rest.shin;
+      if (kneeR.current) kneeR.current.rotation.x = rest.shin;
+      if (body.current) body.current.rotation.z = 0;
     }
 
     const h = walking ? null : head.current;
@@ -188,40 +226,65 @@ function Robot3DImpl({
 
   return (
     <group ref={root} position={position} rotation={[0, facing, 0]} scale={scale}>
-      {/* Cheap contact shadow: one unlit disc, no shadow map anywhere. */}
-      <mesh
-        geometry={GEO.circle}
-        material={MAT.shadow}
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.006, 0]}
-        scale={standing ? 0.62 : 0.72}
-      />
+      {/* Cheap contact shadow: one unlit disc, no shadow map anywhere. It sits
+          on the floor, not on the seat, so it tracks the base height. */}
+      {contactShadow && (
+        <mesh
+          geometry={GEO.circle}
+          material={MAT.shadow}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, 0.006 - position[1], standing ? 0 : 0.12]}
+          scale={standing ? 0.66 : 0.8}
+        />
+      )}
 
-      <group position={[0, standing ? 0.62 : 0.42, 0]}>
+      <group ref={body} position={[0, rest.torso, 0]} rotation={[rest.lean, 0, 0]}>
         <mesh geometry={GEO.torso} material={MAT.clay} />
-        {/* Chest light */}
-        <mesh geometry={GEO.bulb} material={tell} position={[0, 0.02, 0.2]} scale={0.4} />
+        {/* Chest plate and pack: the two silhouette details that keep the robot
+            readable from behind as well as from the front. */}
+        <mesh geometry={GEO.chestPlate} material={MAT.clayLight} position={[0, 0.01, 0.19]} />
+        <mesh geometry={GEO.bulb} material={tell} position={[0, 0.02, 0.235]} scale={0.5} />
+        <mesh geometry={GEO.backpack} material={MAT.clayDark} position={[0, 0.02, -0.21]} />
+        <mesh
+          geometry={GEO.rackLed}
+          material={tell}
+          position={[0, 0.08, -0.267]}
+          scale={[0.42, 0.7, 1]}
+        />
 
-        <group ref={armL} position={[-0.24, 0.1, 0]}>
+        <mesh geometry={GEO.shoulder} material={MAT.clayDark} position={[-0.24, 0.16, 0]} />
+        <mesh geometry={GEO.shoulder} material={MAT.clayDark} position={[0.24, 0.16, 0]} />
+
+        <group ref={armL} position={[-0.25, 0.12, 0]}>
           <mesh geometry={GEO.limb} material={MAT.clayDark} position={[0, -0.12, 0.02]} />
-          <mesh geometry={GEO.bulb} material={MAT.clayLight} position={[0, -0.25, 0.05]} scale={0.9} />
+          <mesh geometry={GEO.hand} material={MAT.clayLight} position={[0, -0.26, 0.05]} />
         </group>
-        <group ref={armR} position={[0.24, 0.1, 0]}>
+        <group ref={armR} position={[0.25, 0.12, 0]}>
           <mesh geometry={GEO.limb} material={MAT.clayDark} position={[0, -0.12, 0.02]} />
-          <mesh geometry={GEO.bulb} material={MAT.clayLight} position={[0, -0.25, 0.05]} scale={0.9} />
+          <mesh geometry={GEO.hand} material={MAT.clayLight} position={[0, -0.26, 0.05]} />
         </group>
 
-        <group ref={head} position={[0, 0.35, 0]}>
+        <mesh geometry={GEO.neck} material={MAT.clayDark} position={[0, 0.24, 0]} />
+
+        <group ref={head} position={[0, 0.36, 0]}>
           <mesh geometry={GEO.head} material={MAT.clay} scale={[1.06, 0.92, 0.95]} />
+          {/* A brighter cap catches the ceiling light and gives the head a top. */}
+          <mesh
+            geometry={GEO.crown}
+            material={MAT.clayLight}
+            position={[0, 0.005, 0]}
+            scale={[1.02, 0.9, 0.92]}
+          />
           <mesh geometry={GEO.ear} material={MAT.clayDark} position={[-0.28, 0, 0]} />
           <mesh geometry={GEO.ear} material={MAT.clayDark} position={[0.28, 0, 0]} />
-          {/* Dark visor well, then the glowing lens inside it. */}
+          {/* Dark visor well, a brow above it, then the glowing lens inside. */}
           <mesh
             geometry={GEO.visor}
             material={MAT.visorGlass}
             position={[0, 0.015, 0.17]}
-            scale={[1.3, 0.7, 0.3]}
+            scale={[1.3, 0.72, 0.3]}
           />
+          <mesh geometry={GEO.brow} material={MAT.clayDark} position={[0, 0.135, 0.2]} />
           <mesh
             ref={visor}
             geometry={GEO.visor}
@@ -234,27 +297,37 @@ function Robot3DImpl({
         </group>
       </group>
 
-      {standing && (
-        <>
-          {/* The pivot is the hip group, so rotating it reads as a stride. */}
-          <group ref={legL} position={[-0.11, 0.38, 0]}>
-            <mesh
-              geometry={GEO.limb}
-              material={MAT.clayDark}
-              position={[0, -0.18, 0]}
-              scale={[1, 1.15, 1]}
-            />
-          </group>
-          <group ref={legR} position={[0.11, 0.38, 0]}>
-            <mesh
-              geometry={GEO.limb}
-              material={MAT.clayDark}
-              position={[0, -0.18, 0]}
-              scale={[1, 1.15, 1]}
-            />
-          </group>
-        </>
-      )}
+      {/*
+        Hips and legs exist in every pose now, not only standing: an agent that
+        walks to its desk and sits down has to have something to sit with, and
+        the seated pose is in full view from the near side of the desk.
+      */}
+      <mesh geometry={GEO.pelvis} material={MAT.clayDark} position={[0, rest.hip + 0.05, 0]} />
+      <Leg hip={legL} knee={kneeL} x={-0.12} y={rest.hip} />
+      <Leg hip={legR} knee={kneeR} x={0.12} y={rest.hip} />
+    </group>
+  );
+}
+
+/** One jointed leg: hip pivot, thigh, knee pivot, shin and foot. */
+function Leg({
+  hip,
+  knee,
+  x,
+  y,
+}: {
+  hip: RefObject<THREE.Group | null>;
+  knee: RefObject<THREE.Group | null>;
+  x: number;
+  y: number;
+}) {
+  return (
+    <group ref={hip} position={[x, y, 0]}>
+      <mesh geometry={GEO.thigh} material={MAT.clayDark} position={[0, -0.14, 0]} />
+      <group ref={knee} position={[0, -0.28, 0]}>
+        <mesh geometry={GEO.shin} material={MAT.clay} position={[0, -0.14, 0]} />
+        <mesh geometry={GEO.foot} material={MAT.dark} position={[0, -0.29, 0.04]} />
+      </group>
     </group>
   );
 }

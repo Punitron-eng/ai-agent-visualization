@@ -6,7 +6,7 @@
  * one theme and another in the next would be worse than no theme at all.
  */
 
-export type VibeId = "warm" | "studio" | "graphite";
+export type VibeId = "atrium" | "warm" | "studio" | "graphite";
 
 export interface SceneColors {
   ground: string;
@@ -60,6 +60,57 @@ export interface Vibe {
 }
 
 export const VIBES: Record<VibeId, Vibe> = {
+  /**
+   * The house style: a bright architectural model — white walls, oak, glass
+   * and a single brand blue. Every other vibe is a re-skin of this one.
+   */
+  atrium: {
+    id: "atrium",
+    label: "Atrium",
+    hint: "White, oak and brand blue",
+    scene: {
+      ground: "#22262b",
+      floor: "#d8d4cd",
+      floorSheen: "#cfc9c0",
+      wall: "#f2efea",
+      deskTop: "#f4f2ee",
+      deskLeg: "#9aa0a5",
+      metal: "#8f9599",
+      seat: "#2f3439",
+      fabric: "#454b52",
+      screenOff: "#1a1d21",
+      leaf: "#4f9a63",
+      leafDark: "#3a7a4c",
+      pot: "#efece6",
+      glass: "#cfe3ef",
+      crate: "#c8a077",
+      clay: "#2f6fe0",
+      clayLight: "#5f93ee",
+      clayDark: "#1b4fb0",
+      amber: "#f0b23d",
+      rug: "#d9d4ca",
+      rugAlt: "#c3ccd6",
+      window: "#dff0fa",
+      lampWarm: "#fff1dc",
+      paper: "#ffffff",
+      divider: "#e4e0d8",
+      dark: "#22262a",
+    },
+    light: {
+      hemiSky: "#ffffff",
+      hemiGround: "#d8d2c8",
+      hemiIntensity: 2.2,
+      ambient: "#ffffff",
+      ambientIntensity: 1.05,
+      keyColor: "#fff4e6",
+      keyIntensity: 2.3,
+      fillColor: "#dceaf8",
+      fillIntensity: 1.1,
+      lampColor: "#ffe0b4",
+      lampIntensity: 9,
+    },
+  },
+
   warm: {
     id: "warm",
     label: "Warm studio",
@@ -203,4 +254,4 @@ export const VIBES: Record<VibeId, Vibe> = {
 };
 
 export const VIBE_IDS = Object.keys(VIBES) as VibeId[];
-export const DEFAULT_VIBE: VibeId = "warm";
+export const DEFAULT_VIBE: VibeId = "atrium";

@@ -22,7 +22,6 @@ import {
   Table,
   Whiteboard,
 } from "@/components/office/props";
-import { RobotAgent } from "@/components/office/RobotAgent";
 import type { OfficePlan, Zone } from "@/components/office/layout";
 import type { WorkflowSignals } from "@/store/agentStore";
 
@@ -30,10 +29,10 @@ import type { WorkflowSignals } from "@/store/agentStore";
  * Everything that is not a project desk: the shell of the room, and the zones
  * work actually flows through — plan, build, test, review, deploy.
  *
- * The ambient robots are set dressing, but their behaviour is tied to real
- * aggregate state, never invented. The test bench only lights when a test
- * command is genuinely running, the review area only when a `git` command is,
- * and the racks only during a build or deploy.
+ * Nobody lives here: every robot in the scene is a real project, drawn by the
+ * agent layer on top of this one. What the room does is react — the test bench
+ * only lights when a test command is genuinely running, the review area only
+ * when a `git` command is, and the racks only during a build or deploy.
  */
 function OfficeEnvironmentImpl({
   plan,
@@ -81,60 +80,31 @@ function OfficeEnvironmentImpl({
       <Chair x={Z.planning.x + 1.1} y={Z.planning.y + 1.15} />
       <Chair x={Z.planning.x + 3.5} y={Z.planning.y + 1.15} />
       <Mug x={Z.planning.x + 2.6} y={Z.planning.y + 2.2} z={0.7} />
-      <RobotAgent
-        x={Z.planning.x + 1.7}
-        y={Z.planning.y + 1.7}
-        state={signals.planning ? "thinking" : "idle"}
-        pose="standing"
-        animate={animate}
-        scale={0.3}
-      />
-      <RobotAgent
-        x={Z.planning.x + 3.2}
-        y={Z.planning.y + 1.7}
-        state={signals.planning ? "thinking" : "idle"}
-        pose="standing"
-        animate={animate}
-        scale={0.3}
-        flip
-      />
       <Plant x={Z.planning.x + 5.2} y={Z.planning.y + 0.4} scale={1.05} sway={animate} />
 
       {/* ── Chill ──────────────────────────────────────────────────────── */}
       <ZoneFloor zone={Z.chill} tint="#463628" />
       <LightPool {...Z.chill} color="var(--clay-light)" opacity={0.05} />
-      <Rug x={Z.chill.x + 0.5} y={Z.chill.y + 1.4} w={3.0} d={1.9} />
-      <Sofa x={Z.chill.x + 0.7} y={Z.chill.y + 0.4} w={2.5} />
-      <Table x={Z.chill.x + 1.3} y={Z.chill.y + 2.0} w={1.3} d={0.85} h={0.36} />
-      <Mug x={Z.chill.x + 1.7} y={Z.chill.y + 2.25} z={0.44} />
-      <RobotAgent
-        x={Z.chill.x + 1.5}
-        y={Z.chill.y + 0.85}
-        z={0.34}
-        state={signals.waiting ? "waiting" : "idle"}
-        animate={animate}
-        scale={0.29}
-      />
+      <Rug x={Z.chill.x + 0.3} y={Z.chill.y + 1.5} w={3.6} d={2.1} />
+      {/* Laid out around the lounge spots in `lib/agent/stations`, so an idle
+          agent lands on the sofa rather than beside it. */}
+      <Sofa x={Z.chill.x + 0.7} y={Z.chill.y + 2.6} w={2.6} />
+      <Chair x={Z.chill.x + 0.3} y={Z.chill.y + 1.95} />
+      <Chair x={Z.chill.x + 3.2} y={Z.chill.y + 2.05} />
+      <Table x={Z.chill.x + 1.4} y={Z.chill.y + 1.6} w={1.3} d={0.85} h={0.36} />
+      <Mug x={Z.chill.x + 1.8} y={Z.chill.y + 1.85} z={0.44} />
       <Plant x={Z.chill.x + 3.5} y={Z.chill.y + 0.3} scale={1.15} sway={animate} />
 
-      {/* ── Fuel ───────────────────────────────────────────────────────── */}
-      <ZoneFloor zone={Z.fuel} tint="#463628" />
-      <LightPool {...Z.fuel} opacity={0.08} />
-      <IsoBox x={Z.fuel.x + 0.2} y={Z.fuel.y + 0.4} w={2.9} d={0.75} h={0.95} color="#463830" />
-      <IsoBox x={Z.fuel.x + 0.2} y={Z.fuel.y + 0.4} w={2.9} d={0.75} h={0.04} z={0.95} color="#6b574a" />
-      <CoffeeMachine x={Z.fuel.x + 0.45} y={Z.fuel.y + 0.55} />
-      <Mug x={Z.fuel.x + 1.55} y={Z.fuel.y + 0.7} z={0.99} />
-      <Mug x={Z.fuel.x + 1.9} y={Z.fuel.y + 0.7} z={0.99} />
-      <Mug x={Z.fuel.x + 2.25} y={Z.fuel.y + 0.7} z={0.99} />
-      <RobotAgent
-        x={Z.fuel.x + 1.9}
-        y={Z.fuel.y + 2.05}
-        state="idle"
-        pose="standing"
-        animate={animate}
-        scale={0.28}
-      />
-      <Bookshelf x={Z.fuel.x + 2.7} y={Z.fuel.y + 1.9} />
+      {/* ── Meeting 02 ─────────────────────────────────────────────────── */}
+      <ZoneFloor zone={Z.meeting} tint="#463628" />
+      <LightPool {...Z.meeting} opacity={0.08} />
+      <IsoBox x={Z.meeting.x + 0.2} y={Z.meeting.y + 0.4} w={2.9} d={0.75} h={0.95} color="#463830" />
+      <IsoBox x={Z.meeting.x + 0.2} y={Z.meeting.y + 0.4} w={2.9} d={0.75} h={0.04} z={0.95} color="#6b574a" />
+      <CoffeeMachine x={Z.meeting.x + 0.45} y={Z.meeting.y + 0.55} />
+      <Mug x={Z.meeting.x + 1.55} y={Z.meeting.y + 0.7} z={0.99} />
+      <Mug x={Z.meeting.x + 1.9} y={Z.meeting.y + 0.7} z={0.99} />
+      <Mug x={Z.meeting.x + 2.25} y={Z.meeting.y + 0.7} z={0.99} />
+      <Bookshelf x={Z.meeting.x + 2.7} y={Z.meeting.y + 1.9} />
 
       {/* ── Test & Debug ───────────────────────────────────────────────── */}
       <ZoneFloor zone={Z.testing} tint="#443327" />
@@ -162,14 +132,6 @@ function OfficeEnvironmentImpl({
         animate={animate}
         dense
       />
-      <RobotAgent
-        x={Z.testing.x + 1.8}
-        y={Z.testing.y + 2.05}
-        state={signals.testing ? "running" : "idle"}
-        pose="standing"
-        animate={animate}
-        scale={0.29}
-      />
       <Plant x={Z.testing.x + 3.8} y={Z.testing.y + 0.5} scale={0.85} sway={animate} />
 
       {/* ── Git & Review ───────────────────────────────────────────────── */}
@@ -191,23 +153,6 @@ function OfficeEnvironmentImpl({
         dense
       />
       <BranchGlyph x={Z.review.x + 3.3} y={Z.review.y + 0.9} active={signals.reviewing && animate} />
-      <RobotAgent
-        x={Z.review.x + 1.2}
-        y={Z.review.y + 2.05}
-        state={signals.reviewing ? "reading" : "idle"}
-        pose="standing"
-        animate={animate}
-        scale={0.29}
-      />
-      <RobotAgent
-        x={Z.review.x + 2.7}
-        y={Z.review.y + 2.05}
-        state={signals.reviewing ? "thinking" : "idle"}
-        pose="standing"
-        animate={animate}
-        scale={0.29}
-        flip
-      />
 
       {/* ── Deploy ─────────────────────────────────────────────────────── */}
       <ZoneFloor zone={Z.deploy} tint="#413124" />
@@ -220,14 +165,6 @@ function OfficeEnvironmentImpl({
       <ServerRack x={Z.deploy.x + 4.05} y={Z.deploy.y + 0.3} active={signals.deploying && animate} />
       <Crate x={Z.deploy.x + 1.5} y={Z.deploy.y + 0.7} />
       <Crate x={Z.deploy.x + 2.3} y={Z.deploy.y + 1.0} h={0.5} />
-      <RobotAgent
-        x={Z.deploy.x + 0.9}
-        y={Z.deploy.y + 2.05}
-        state={signals.deploying ? "running" : "idle"}
-        pose="standing"
-        animate={animate}
-        scale={0.29}
-      />
       <Plant x={Z.deploy.x + 0.2} y={Z.deploy.y + 0.4} scale={0.9} sway={animate} />
     </g>
   );

@@ -66,7 +66,7 @@ function ProjectLabel({
 
   return (
     <Html
-      position={[place.x + 1.35, 1.95, place.y + 0.4]}
+      position={[place.robot.x + place.out.x * 0.3, 1.95, place.robot.y + place.out.z * 0.3]}
       center
       // Occlusion needs a raycast per frame per label; the tether and the
       // dimming already make depth readable, so it is not worth the cost.

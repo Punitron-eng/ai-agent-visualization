@@ -42,7 +42,7 @@ export const GEO = {
   chairBack: box(0.5, 0.5, 0.08),
   chairPost: new THREE.CylinderGeometry(0.045, 0.045, 0.36, 8),
 
-  // Robot rig. One sphere and one capsule serve the whole cast.
+  // Robot rig. A handful of primitives serve the whole cast.
   head: new THREE.SphereGeometry(0.29, 18, 12),
   visor: new THREE.SphereGeometry(0.205, 16, 10),
   torso: new THREE.CapsuleGeometry(0.235, 0.2, 3, 12),
@@ -50,6 +50,19 @@ export const GEO = {
   antenna: new THREE.CylinderGeometry(0.014, 0.014, 0.17, 6),
   bulb: new THREE.SphereGeometry(0.05, 10, 8),
   ear: new THREE.CapsuleGeometry(0.038, 0.05, 2, 6),
+  // Added definition: joints, hands, feet and panelling, so the cast reads as
+  // built rather than assembled from three blobs.
+  neck: new THREE.CylinderGeometry(0.075, 0.09, 0.09, 10),
+  shoulder: new THREE.SphereGeometry(0.085, 10, 8),
+  hand: new THREE.SphereGeometry(0.062, 10, 8),
+  thigh: new THREE.CapsuleGeometry(0.072, 0.15, 2, 8),
+  shin: new THREE.CapsuleGeometry(0.06, 0.15, 2, 8),
+  foot: box(0.14, 0.07, 0.22),
+  pelvis: box(0.3, 0.12, 0.2),
+  chestPlate: box(0.26, 0.2, 0.06),
+  backpack: box(0.28, 0.26, 0.1),
+  brow: box(0.42, 0.035, 0.06),
+  crown: new THREE.SphereGeometry(0.29, 16, 8, 0, Math.PI * 2, 0, 0.9),
 
   pot: new THREE.CylinderGeometry(0.17, 0.13, 0.24, 10),
   leaf: new THREE.SphereGeometry(0.17, 10, 7),
@@ -303,7 +316,7 @@ export function applyVibe(vibe: Vibe): void {
   halo?.color.set(vibe.scene.lampWarm);
   // A bright room needs darker contact shadows to read at all; a dark one
   // needs them lifted or objects look glued to the floor.
-  const bright = vibe.id === "studio";
+  const bright = vibe.id === "studio" || vibe.id === "atrium";
   MAT.shadow.opacity = bright ? 0.16 : 0.32;
   MAT.glass.opacity = bright ? 0.2 : 0.1;
 }

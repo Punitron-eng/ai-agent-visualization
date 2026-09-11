@@ -4,8 +4,9 @@ import { memo, useCallback } from "react";
 import type { ProjectId } from "@/lib/agent/agentTypes";
 import { useProject } from "@/store/agentStore";
 import { deskSlot } from "@/components/office/layout";
-import { Chair, Desk, Keyboard, Monitor, Mug, Plant } from "@/components/office3d/Props3D";
-import { Robot3D } from "@/components/office3d/Robot3D";
+import { TaskChair } from "@/components/office3d/studio/Chair";
+import { DeskLamp, DeskProps, Laptop, StudioMonitor } from "@/components/office3d/studio/Monitor";
+import { deskSpot } from "@/lib/agent/stations";
 import { GEO, stateFloorGlow } from "@/components/office3d/resources";
 
 export interface Workstation3DProps {
@@ -48,8 +49,21 @@ function Workstation3DImpl({
   // looking between two things.
   const dual = state === "searching" || state === "reading";
 
-  const x = place.x + 1.35;
-  const z = place.y + 0.75;
+  const seat = deskSpot(slot);
+  const { side, out, along, face } = place;
+  // A few degrees of per-seat rotation, so a run of screens reads as occupied
+  // rather than as a showroom.
+  const tilt = ((slot % 3) - 1) * 0.09;
+  /**
+   * Desk-top coordinates: `a` runs along the bench, `o` out toward the
+   * occupant. Everything on the desk is placed this way, so the run can lie
+   * either way in the room without a single position being rewritten.
+   */
+  const top = (a: number, o: number): [number, number, number] => [
+    place.desk.x + along.x * a + out.x * o,
+    0.78,
+    place.desk.z + along.z * a + out.z * o,
+  ];
 
   return (
     <group
@@ -64,36 +78,34 @@ function Workstation3DImpl({
       }}
     >
       {/*
-        The agent sits on the far side of the desk facing the camera, and the
-        monitors are angled toward the camera too. Strictly the robot is then
-        looking at the back of its screen — the same cheat every isometric
-        office illustration uses, because the alternative is a room full of
-        robots seen from behind.
+        The chair is on the occupant's side of the bench, so whoever sits in it
+        is looking at the front of the monitor rather than at its back. The
+        agent itself is not drawn here: it belongs to the room, not to the
+        seat, and walks in from the lounge when there is work.
       */}
-      <Chair position={[x - 0.3, 0, z - 1.28]} rotation={0.28} />
-      <Robot3D
-        position={[x - 0.3, 0.42, z - 0.95]}
-        state={state}
-        facing={0.28}
-        animate={animate}
-        scale={hovered ? 1.1 : 1}
-        seed={slot}
+      <TaskChair
+        position={[seat.x + out.x * 0.12, 0, seat.z + out.z * 0.12]}
+        rotation={face + Math.PI}
       />
 
-      <Desk position={[x, 0, z]} width={2.7} />
-      <Monitor position={[x + 0.5, 0.83, z + 0.1]} state={state} rotation={0.22} />
+      <StudioMonitor position={top(0, 0)} state={state} rotation={face + tilt} scale={0.82} />
       {dual && (
-        <Monitor
-          position={[x - 0.75, 0.83, z + 0.15]}
+        <StudioMonitor
+          position={top(0.95, 0.06)}
           state={state === "searching" ? "reading" : "searching"}
-          rotation={0.55}
-          scale={0.82}
+          rotation={face + side * 0.45}
+          scale={0.7}
         />
       )}
-      <Keyboard position={[x + 0.35, 0.84, z + 0.55]} state={state} animate={animate} />
-      <Mug position={[x + 1.15, 0.84, z + 0.5]} />
-
-      {slot % 2 === 1 && <Plant position={[x + 1.75, 0, z - 0.5]} scale={0.85} />}
+      {!dual && <Laptop position={top(0.78, 0.3)} rotation={face - side * 0.3} />}
+      <DeskProps
+        position={top(-0.06, 0.45)}
+        rotation={face + side * 0.1}
+        mug={slot % 3 !== 2}
+        state={state}
+        animate={animate}
+      />
+      {slot % 2 === 0 && <DeskLamp position={top(-0.78, 0.1)} rotation={face - side * 0.5} />}
 
       {/*
         A pool of state colour on the floor. At overview distance this is what
@@ -102,7 +114,7 @@ function Workstation3DImpl({
       <mesh
         geometry={GEO.circle}
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[x, 0.012, z - 0.2]}
+        position={[place.robot.x, 0.012, place.robot.y]}
         scale={hovered ? 4.6 : 3.8}
         material={stateFloorGlow(state, hovered ? 0.3 : busy ? 0.16 : 0.04)}
         visible={!dimmed}

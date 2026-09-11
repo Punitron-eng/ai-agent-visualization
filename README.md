@@ -99,29 +99,41 @@ scene's shared materials in place and re-points the shell's CSS variables — no
 Agent state colours are deliberately **not** themed: they are semantic, and a state that meant one
 thing in one vibe and another in the next would be worse than no theme at all.
 
-**Planning and Chill are real rooms**, glazed on three sides with a doorway onto the floor. The
-lounge has a TV playing a looping sunset — twelve frames rasterised once at startup and cycled by
-swapping a texture pointer, so "playing" costs nothing per frame.
+**The development floor is benching, not islands.** Each cluster is one continuous shared top with
+three workstations down each side, back to back across a planted divider, a cable tray slung under
+the centre line and six ergonomic task chairs. The runs lie across the room and repeat front to
+back, so a project is given a *seat* on a bench rather than a table of its own — twelve projects
+fill two clusters instead of scattering twelve desks over the floor.
 
-**Free agents roam the floor.** They are not projects and never claim to be — they are the crowd
-that makes the room feel occupied, walking fixed routes down the aisles, pausing at stops, legs
-swinging. Project agents stay at their desks.
+**The social wing runs across the back**: two glass meeting rooms and a recreation room, all in the
+same architectural language — full-height glazing, slim dark frames, a glass door, a ceiling
+fixture. Meeting 01 and Meeting 02 are one `<MeetingRoom />` rendered twice from a configuration
+array (seat count, whiteboard text, which way the door swings); their boards read
+*IDEAS → PRODUCTS → IMPACT* and *PLAN → BUILD → SHIP*.
+
+**The chill room has a carrom board**, and four free agents playing it. They are not projects and
+never claim to be — they are the crowd that makes the room feel occupied. Two take shots, two watch;
+everyone breathes, shifts their weight and leans in as the play moves, so nobody reads as frozen.
+The four are generated from an `agents` array, and the bodies are the same robot rig the project
+agents use rather than a second character. Hovering names the rooms (*PLANNING*, *COLLABORATION*,
+*FREE AGENTS*, *BREAK TIME*); clicking the chill room eases the camera down to the height of the
+game.
 
 The floor is laid out along the engineering cycle — **plan → build → test → review → deploy** —
 rather than as decorative rooms. Every zone earns its place:
 
 | Zone | Comes alive when |
 | --- | --- |
-| **Planning** (back) | any project is `thinking` |
-| **Development** (middle) | one desk per detected project |
+| **Development** (middle) | one seat per detected project |
 | **Test & Debug** (front) | a real test command is running |
 | **Git & Review** (front) | a real `git` / `gh` command is running |
 | **Deploy** (front) | a real build or deploy command is running |
-| **Chill** (back) | a project is `waiting` on you |
-| **Fuel** (back) | always — the floor needs coffee |
+| **Meeting 01** (back) | any project is `thinking` |
+| **Meeting 02** (back) | collaboration — the second glass room |
+| **Chill** (back) | a project is `waiting` on you — and the carrom game |
 
-Desks are assigned first-come and never reshuffle, so a project stays where you last saw it. The
-grid grows with the project count and the front band of zones moves with it.
+Seats are assigned first-come and never reshuffle, so a project stays where you last saw it. Bench
+runs are added as the project count grows, and the plate widens with them.
 
 **Monitors show miniature developer interfaces**, drawn to canvas textures and chosen by state: a code editor
 with a tab strip and caret while coding, a terminal with a progress bar while running, a query pane
@@ -203,8 +215,13 @@ lib/bridge/                    plain Node, no Next imports — liftable to a sta
   transcriptParse.ts           jsonl line -> AgentEvent
 app/api/{hook,events,projects} POST receiver · SSE stream · snapshot + health
 store/agentStore.ts            zustand, keyed by project
-components/office3d/           three.js scene: resources · room · workstation · robot · labels
-components/office/             shared floor plan (layout.ts) used by the 3D scene
+components/office3d/           three.js scene: resources · workstation · robot · labels
+  studio/                      the shell and its furniture: floor · walls · benches · lights
+  studio/social/               the back wing: glass rooms · meeting rooms · chill · carrom · agents
+components/office/             shared floor plan (layout.ts) used by both renderers
+materials/officeMaterials.ts   the one shared geometry + material pool for the shell and furniture
+config/officeLayout.ts         shell dimensions, plant spots, ceiling light runs
+lib/agent/stations.ts          where an agent stands, and the route it walks to get there
 components/character/          the robot rig; motion/stateVariants.ts holds ALL per-state animation
 components/shell/              sidebar · header · activity strip · workspace
 scripts/                       hook install / uninstall / status

@@ -6,11 +6,13 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { ProjectId } from "@/lib/agent/agentTypes";
 import { useAnyBusy, useVibeStore, useWorkflowSignals } from "@/store/agentStore";
-import { assignDesks, buildPlan, deskSlot, POD_COLUMNS } from "@/components/office/layout";
-import { Room3D } from "@/components/office3d/Room3D";
+import { assignDesks, buildPlan, deskSlot, SEATS_PER_ROW } from "@/components/office/layout";
+import { StudioRoom } from "@/components/office3d/studio/StudioRoom";
 import { Workstation3D } from "@/components/office3d/Workstation3D";
+import { BenchClusters } from "@/components/office3d/studio/BenchCluster";
+import { SocialWing } from "@/components/office3d/studio/social/SocialWing";
 import { EmptyDesk3D } from "@/components/office3d/EmptyDesk3D";
-import { Roamers } from "@/components/office3d/Roamers";
+import { OfficeAgents } from "@/components/office3d/OfficeAgents";
 import { ProjectLabels, ZoneLabels } from "@/components/office3d/ProjectLabels";
 import { VIBES, type Vibe } from "@/lib/agent/vibes";
 import { applyVibe } from "@/components/office3d/resources";
@@ -22,7 +24,8 @@ export interface Office3DProps {
   onSelect(id: ProjectId): void;
 }
 
-const MIN_DESKS = POD_COLUMNS;
+/** Two full bench runs are always dressed, however few projects are open. */
+const MIN_DESKS = SEATS_PER_ROW * 2;
 
 /**
  * The office as a navigable 3D room.
@@ -38,6 +41,9 @@ const MIN_DESKS = POD_COLUMNS;
  */
 function Office3DImpl({ ids, animate, focusedId, onSelect }: Office3DProps) {
   const [hovered, setHovered] = useState<ProjectId | null>(null);
+  // A point the camera has been asked to visit that is not a desk — currently
+  // only the carrom game, when the chill room is clicked.
+  const [focusPoint, setFocusPoint] = useState<[number, number, number] | null>(null);
   const desks = useStableDesks(ids);
   const signals = useWorkflowSignals();
   const anyBusy = useAnyBusy();
@@ -48,9 +54,29 @@ function Office3DImpl({ ids, animate, focusedId, onSelect }: Office3DProps) {
   const deskCount = Math.max(MIN_DESKS, ids.length);
   const plan = useMemo(() => buildPlan(deskCount), [deskCount]);
   const center = useMemo(
-    () => new THREE.Vector3(plan.width / 2, 0.6, plan.depth / 2),
+    () => new THREE.Vector3(plan.width / 2, 0.9, plan.depth / 2),
     [plan.width, plan.depth],
   );
+
+  /**
+   * The opening shot, derived from the plan rather than hard-coded: an
+   * architectural three-quarter view from the open front-right corner, high
+   * enough to read the whole floor plate at any project count.
+   */
+  const view = useMemo(() => {
+    const span = Math.max(plan.width, plan.depth);
+    return {
+      // Direction is a fixed architectural three-quarter (about 37° above
+      // the floor, off the open front-right corner); only the distance scales
+      // with the plan, so the framing is identical at 4 desks and at 40.
+      eye: [
+        plan.width * 0.5 + span * 0.98,
+        span * 0.95,
+        plan.depth / 2 + span * 0.82,
+      ] as [number, number, number],
+      span,
+    };
+  }, [plan.width, plan.depth]);
 
   const ordered = useMemo(() => [...desks.entries()].sort((a, b) => a[1] - b[1]), [desks]);
   const emptySlots = useMemo(() => {
@@ -72,7 +98,7 @@ function Office3DImpl({ ids, animate, focusedId, onSelect }: Office3DProps) {
         // Clamped so a high-DPI panel does not multiply the fill cost.
         dpr={[1, 1.6]}
         gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
-        camera={{ position: [plan.width * 1.15, 13, plan.depth * 1.5], fov: 32, near: 0.5, far: 90 }}
+        camera={{ position: view.eye, fov: 38, near: 0.5, far: 240 }}
         onPointerMissed={() => setHovered(null)}
       >
         <AdaptiveLoop busy={busy} visible={animate} />
@@ -88,7 +114,7 @@ function Office3DImpl({ ids, animate, focusedId, onSelect }: Office3DProps) {
         {/* Declarative, so a vibe change re-renders instead of mutating the
             scene object behind React's back. */}
         <color attach="background" args={[vibe.scene.ground]} />
-        <fog attach="fog" args={[vibe.scene.ground, 44, 96]} />
+        <fog attach="fog" args={[vibe.scene.ground, 70, 190]} />
         <VibeSkin vibe={vibe} />
         <hemisphereLight
           args={[vibe.light.hemiSky, vibe.light.hemiGround, vibe.light.hemiIntensity]}
@@ -100,13 +126,27 @@ function Office3DImpl({ ids, animate, focusedId, onSelect }: Office3DProps) {
         <pointLight position={[plan.width * 0.78, 2.6, plan.depth * 0.16]} intensity={vibe.light.lampIntensity * 0.8} distance={11} decay={2} color={vibe.light.lampColor} />
         <pointLight position={[plan.width * 0.42, 2.6, plan.depth * 0.9]} intensity={vibe.light.lampIntensity * 0.9} distance={13} decay={2} color={vibe.light.lampColor} />
 
-        <Room3D plan={plan} animate={animate} signals={signals} />
-        <Roamers plan={plan} animate={animate} />
+        <StudioRoom plan={plan} deskCount={deskCount} animate={animate} signals={signals} />
 
-        {emptySlots.map((slot) => {
-          const place = deskSlot(slot);
-          return <EmptyDesk3D key={`empty-${slot}`} x={place.x + 1.35} z={place.y + 0.75} />;
-        })}
+        {/* The bench runs: six workstations each, three a side. */}
+        <BenchClusters deskCount={deskCount} />
+
+        {/* Two glass meeting rooms and the recreation room, across the back. */}
+        <SocialWing plan={plan} animate={animate} onFocus={setFocusPoint} />
+
+        {/* One agent per project, and nobody else on the floor: they walk
+            between the lounge, their desk and the git station. */}
+        <OfficeAgents
+          ordered={ordered}
+          plan={plan}
+          animate={animate}
+          onHover={setHovered}
+          onSelect={onSelect}
+        />
+
+        {emptySlots.map((slot) => (
+          <EmptyDesk3D key={`empty-${slot}`} slot={slot} />
+        ))}
 
         {ordered.map(([id, slot]) => (
           <Workstation3D
@@ -130,7 +170,12 @@ function Office3DImpl({ ids, animate, focusedId, onSelect }: Office3DProps) {
           onSelect={onSelect}
         />
 
-        <CameraRig focusedSlot={focusedId ? desks.get(focusedId) : undefined} />
+        <CameraRig
+          focusedSlot={focusedId ? desks.get(focusedId) : undefined}
+          // A selected project supersedes a room focus, so the two never fight
+          // over the camera.
+          focusPoint={focusedId === null ? focusPoint : null}
+        />
 
         <OrbitControls
           makeDefault
@@ -141,8 +186,8 @@ function Office3DImpl({ ids, animate, focusedId, onSelect }: Office3DProps) {
           // cannot be lost or turned upside down.
           minPolarAngle={0.15}
           maxPolarAngle={Math.PI / 2 - 0.06}
-          minDistance={5}
-          maxDistance={46}
+          minDistance={6}
+          maxDistance={view.span * 2.6}
           panSpeed={0.7}
           rotateSpeed={0.55}
           zoomSpeed={0.8}
@@ -204,31 +249,55 @@ function AdaptiveLoop({ busy, visible }: { busy: boolean; visible: boolean }) {
   return null;
 }
 
-/** Eases the camera toward a desk when a project is focused. */
-function CameraRig({ focusedSlot }: { focusedSlot: number | undefined }) {
+/**
+ * Eases the camera toward whatever is focused: a desk when a project is
+ * selected, or an arbitrary point in the room when something like the carrom
+ * game is clicked.
+ *
+ * The move ends by simply stopping — orbit control is never taken away, so the
+ * user can grab the camera mid-flight or immediately after it lands.
+ */
+function CameraRig({
+  focusedSlot,
+  focusPoint,
+}: {
+  focusedSlot: number | undefined;
+  focusPoint: [number, number, number] | null;
+}) {
   const { camera, controls, invalidate } = useThree();
   const target = useRef(new THREE.Vector3());
   const eye = useRef(new THREE.Vector3());
   const active = useRef(false);
 
   useEffect(() => {
-    if (focusedSlot === undefined) {
+    if (focusedSlot !== undefined) {
+      const place = deskSlot(focusedSlot);
+      // Approached from the seat's own side of the run, so the focused screen
+      // is facing the camera rather than edge-on to it.
+      const seatX = place.robot.x;
+      const seatZ = place.robot.y;
+      target.current.set(seatX, 1.0, seatZ);
+      eye.current.set(seatX + place.out.x * 4.6 + 1.6, 3.4, seatZ + place.out.z * 4.6 + 4.4);
+    } else if (focusPoint) {
+      // Low and close, from the open side of the room: a person's eye level at
+      // the table rather than a plan view of it.
+      const [x, y, z] = focusPoint;
+      target.current.set(x, y, z);
+      eye.current.set(x + 2.6, y + 2.3, z + 5.4);
+    } else {
       active.current = false;
       return;
     }
-    const place = deskSlot(focusedSlot);
-    target.current.set(place.x + 1.35, 1.0, place.y + 0.9);
-    eye.current.set(place.x + 1.35, 3.6, place.y + 6.2);
     active.current = true;
     invalidate();
-  }, [focusedSlot, invalidate]);
+  }, [focusedSlot, focusPoint, invalidate]);
 
   useFrame(() => {
     if (!active.current) return;
     const orbit = controls as unknown as { target: THREE.Vector3; update(): void } | null;
-    camera.position.lerp(eye.current, 0.08);
+    camera.position.lerp(eye.current, 0.06);
     if (orbit?.target) {
-      orbit.target.lerp(target.current, 0.08);
+      orbit.target.lerp(target.current, 0.06);
       orbit.update();
     }
     invalidate();

@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 import type { AgentState, ProjectId } from "@/lib/agent/agentTypes";
 import { useProject } from "@/store/agentStore";
 import { Chair, Desk, DeskKeyboard, DeskMonitor, LightPool, Mug, Plant } from "@/components/office/props";
-import { RobotAgent } from "@/components/office/RobotAgent";
 import { deskSlot } from "@/components/office/layout";
 import { project as iso } from "@/components/office/iso";
 
@@ -20,8 +19,8 @@ export interface ProjectWorkstationProps {
 }
 
 /**
- * One project as a physical desk. Reads only its own store slice, so activity
- * in another repo never re-renders this workstation.
+ * One project as a physical desk, minus its occupant. Reads only its own store
+ * slice, so activity in another repo never re-renders this workstation.
  */
 function ProjectWorkstationImpl({
   id,
@@ -91,15 +90,10 @@ function ProjectWorkstationImpl({
       <DeskKeyboard x={place.x + 0.82} y={place.y + 0.95} typing={animate && state === "coding"} />
       <Mug x={place.x + 2.3} y={place.y + 1.05} />
 
+      {/* The chair sits on the near side of the desk, facing the screens. The
+          agent is not drawn here — it belongs to the room and walks in from
+          the lounge when its session has work. */}
       <Chair x={place.x + 1.05} y={place.y + 1.75} />
-      <RobotAgent
-        x={place.robot.x}
-        y={place.robot.y}
-        state={state}
-        animate={animate}
-        fidelity="compact"
-        scale={hovered ? 0.37 : 0.34}
-      />
 
       {slot % 2 === 1 && <Plant x={place.x + 2.85} y={place.y + 0.05} scale={0.78} sway={animate} />}
 

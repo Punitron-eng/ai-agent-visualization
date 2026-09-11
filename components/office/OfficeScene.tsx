@@ -6,9 +6,10 @@ import { useAgentStore, useWorkflowSignals } from "@/store/agentStore";
 import { planBounds, project as iso } from "@/components/office/iso";
 import { Dust, EmptyDesk, OfficeEnvironment } from "@/components/office/OfficeEnvironment";
 import { ProjectWorkstation } from "@/components/office/ProjectWorkstation";
+import { AgentCrew } from "@/components/office/AgentCrew";
 import { ProjectHud } from "@/components/office/ProjectHud";
 import { useSceneTransform } from "@/components/office/useSceneTransform";
-import { assignDesks, buildPlan, deskSlot, POD_COLUMNS, type Zone } from "@/components/office/layout";
+import { assignDesks, buildPlan, deskSlot, SEATS_PER_ROW, type Zone } from "@/components/office/layout";
 import type { SceneTransform } from "@/components/office/useSceneTransform";
 
 export interface OfficeSceneProps {
@@ -18,7 +19,8 @@ export interface OfficeSceneProps {
 }
 
 /** Never fewer than one full row of desks, so the pods never look half-built. */
-const MIN_DESKS = POD_COLUMNS;
+/** Two full bench runs are always dressed, however few projects are open. */
+const MIN_DESKS = SEATS_PER_ROW * 2;
 
 /**
  * The office. Draw order is back-to-front (painter's algorithm) because SVG has
@@ -87,6 +89,18 @@ function OfficeSceneImpl({ ids, animate, onSelect }: OfficeSceneProps) {
             onSelect={onSelect}
           />
         ))}
+
+        {/* Agents draw above the furniture: they are the only things in the
+            scene that leave their tile, so they cannot be depth-sorted into
+            the static back-to-front pass. */}
+        <AgentCrew
+          ordered={ordered}
+          plan={plan}
+          animate={animate}
+          hovered={hovered}
+          onHover={setHovered}
+          onSelect={onSelect}
+        />
 
         <Dust animate={animate} />
       </svg>

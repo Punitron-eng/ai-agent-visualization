@@ -1,15 +1,36 @@
 "use client";
 
 import { memo } from "react";
-import { Chair, Desk, Monitor } from "@/components/office3d/Props3D";
+import { deskSlot } from "@/components/office/layout";
+import { TaskChair } from "@/components/office3d/studio/Chair";
+import { DeskProps, StudioMonitor } from "@/components/office3d/studio/Monitor";
 
-/** An unoccupied desk, so the development floor never looks half-built. */
-function EmptyDesk3DImpl({ x, z }: { x: number; z: number }) {
+/**
+ * A spare seat on a bench run: dark screen, chair pushed in.
+ *
+ * The bench itself is drawn by the room, so an unclaimed seat is only the
+ * hardware on it — which is exactly what an empty workstation looks like.
+ */
+function EmptyDesk3DImpl({ slot }: { slot: number }) {
+  const place = deskSlot(slot);
+  const { out, face } = place;
   return (
     <group>
-      <Desk position={[x, 0, z]} width={2.7} />
-      <Monitor position={[x - 0.55, 0.83, z - 0.35]} state="idle" off />
-      <Chair position={[x - 0.3, 0, z - 1.28]} rotation={0.28} />
+      <StudioMonitor
+        position={[place.desk.x, 0.78, place.desk.z]}
+        state="idle"
+        rotation={face}
+        off
+        scale={0.82}
+      />
+      <DeskProps
+        position={[place.desk.x + out.x * 0.42, 0.78, place.desk.z + out.z * 0.42]}
+        rotation={face}
+      />
+      <TaskChair
+        position={[place.robot.x + out.x * 0.22, 0, place.robot.y + out.z * 0.22]}
+        rotation={face + Math.PI}
+      />
     </group>
   );
 }
